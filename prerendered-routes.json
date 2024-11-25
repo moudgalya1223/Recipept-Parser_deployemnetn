@@ -1,0 +1,6 @@
+{
+  "routes": [
+    "/scan",
+    "/scan-qr"
+  ]
+}
