@@ -1,41 +1,31 @@
 steps:
-  # Step 1: Install Ruby and Jekyll dependencies
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        apt-get update
-        apt-get install -y ruby-full build-essential zlib1g-dev
-        gem install jekyll bundler
+  # Step 1: Install Angular dependencies
+  - name: 'gcr.io/cloud-builders/npm'
+    args: ['ci']
 
-  # Step 2: Install the site dependencies (if you have a Gemfile)
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        gem install bundler
-        bundle install
+  # Step 2: Build the Angular app
+  - name: 'gcr.io/cloud-builders/npm'
+    args: ['run', 'build', '--', '--prod']
 
-  # Step 3: Build the Jekyll site
-  - name: 'gcr.io/cloud-builders/gcloud'
-    entrypoint: 'bash'
-    args:
-      - '-c'
-      - |
-        jekyll build
+  # Step 3: Create a container with the built Angular app
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build', '-t', 'gcr.io/$codevipasana-415403/angular-app', '.'
+    ]
 
-  # Step 4: Deploy the built site to Google Cloud Run
+  # Step 4: Push the container image to Google Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/$codevipasana-415403/angular-app']
+
+  # Step 5: Deploy the container to Cloud Run
   - name: 'gcr.io/cloud-builders/gcloud'
-    args:
-      - 'run'
-      - 'deploy'
-      - 'jekyll-site'
-      - '--image'
-      - 'gcr.io/$PROJECT_ID/jekyll-site'
-      - '--platform'
-      - 'managed'
-      - '--region'
-      - 'us-central1'
-      - '--allow-unauthenticated'
+    args: [
+      'run', 'deploy', 'angular-app',
+      '--image', 'gcr.io/$codevipasana-415403/angular-app',
+      '--platform', 'managed',
+      '--region', 'us-central1',
+      '--allow-unauthenticated'
+    ]
+
+images:
+  - 'gcr.io/$codevipasana-415403/angular-app'
